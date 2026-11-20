@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arma PRS · Arma tu banderín</title>
+<meta name="description" content="Juego de Centro Digital PRS: arma tu banderín publicitario en 3 pasos (impresión, estructura y base) y cotiza al instante.">
+<meta name="theme-color" content="#16151b">
+<link rel="icon" href="logo-negro.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cyan:#00AFEF; --cyan-d:#0086b8;
+    --mag:#EC268F;  --mag-d:#b5106a;
+    --yel:#FFF212;  --yel-d:#d9c800;
+    --ink:#222124;  --ink2:#3a3940;
+    --bg:#16151b;   --card:#ffffff; --soft:#f3f6fb; --line:#e3e8f1;
+    --ok:#19b46b;   --bad:#e11d48;
+    --ease:cubic-bezier(.34,1.56,.64,1);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg);
+    background-image:radial-gradient(circle at 20% 10%,rgba(0,175,239,.18),transparent 40%),
+                     radial-gradient(circle at 85% 80%,rgba(236,38,143,.16),transparent 45%),
+                     radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);
+    background-size:auto,auto,22px 22px;
+    font-family:Nunito,"Trebuchet MS",system-ui,sans-serif;color:var(--ink);
+    display:flex;justify-content:center;
+  }
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  .app{
+    width:100%;max-width:440px;height:100vh;height:100dvh;position:relative;
+    background:linear-gradient(#bfeaff 0%,#e8f7ff 38%,#fff 62%);
+    display:flex;flex-direction:column;overflow:hidden;
+    box-shadow:0 0 0 1px rgba(255,255,255,.06),0 30px 80px rgba(0,0,0,.5);
+  }
+  @media(min-width:520px){ body{padding:18px 0} .app{height:calc(100vh - 36px);height:calc(100dvh - 36px);border-radius:28px} }
+
+  /* ---------- HUD ---------- */
+  .hud{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--ink);color:#fff;position:relative;z-index:5}
+  .hud img{height:38px;cursor:pointer}
+  .hud .sp{flex:1}
+  .pill{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;background:#ffffff14;font-weight:900;font-size:14px}
+  .pill b{color:var(--yel)}
+  .pill.bump{animation:bump .5s var(--ease)}
+  .ico{width:36px;height:36px;border-radius:12px;background:#ffffff14;display:grid;place-items:center;font-size:17px}
+  @keyframes bump{40%{transform:scale(1.25)}}
+
+  /* ---------- Pantallas ---------- */
+  .screen{display:none;flex-direction:column;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  #sGame{overflow:hidden}
+  #sGame .stage svg{max-height:30dvh}
+  .screen.on{display:flex;animation:fadeUp .45s ease both}
+  .screen > *{flex-shrink:0}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}}
+
+  /* Intro */
+  .intro{align-items:center;text-align:center;padding:18px 18px 26px;gap:12px}
+  .brand{font-family:"Baloo 2";font-weight:800;line-height:.9;font-size:64px;margin:6px 0 0;letter-spacing:-1px;
+    color:#fff;-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 5px 0 var(--ink)}
+  .brand span{display:inline-block;animation:hop 2.4s ease-in-out infinite}
+  .brand span:nth-child(1){color:var(--cyan)} .brand span:nth-child(2){color:var(--mag);animation-delay:.12s}
+  .brand span:nth-child(3){color:var(--yel);animation-delay:.24s} .brand span:nth-child(4){color:var(--cyan);animation-delay:.36s}
+  .brand .gap{width:16px}
+  .brand .prs span{color:var(--ink)}
+  @keyframes hop{0%,70%,100%{transform:translateY(0)}80%{transform:translateY(-8px) rotate(-4deg)}}
+  .tag{display:inline-block;background:var(--ink);color:#fff;border-radius:999px;padding:6px 14px;font-weight:900;font-size:14px}
+  .tag b{color:var(--yel)}
+  .intro .stage{width:100%;border-radius:24px}
+  .how{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+  .how div{background:#fff;border:2px solid var(--line);border-radius:16px;padding:10px 6px;font-weight:800;font-size:12.5px;line-height:1.2}
+  .how i{display:grid;place-items:center;width:30px;height:30px;margin:0 auto 5px;border-radius:50%;color:#fff;font-style:normal;font-family:"Baloo 2";font-weight:800;font-size:17px}
+  .how div:nth-child(1) i{background:var(--cyan)} .how div:nth-child(2) i{background:var(--mag)} .how div:nth-child(3) i{background:var(--ink)}
+
+  /* Botones 3D */
+  .btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 18px;border-radius:18px;
+    font-family:"Baloo 2";font-weight:800;font-size:21px;line-height:1;color:var(--ink);background:var(--yel);
+    box-shadow:0 6px 0 var(--yel-d),0 10px 18px rgba(0,0,0,.15);transition:transform .12s,box-shadow .12s,filter .2s}
+  .btn:active{transform:translateY(5px);box-shadow:0 1px 0 var(--yel-d)}
+  .btn.cy{background:var(--cyan);color:#fff;box-shadow:0 6px 0 var(--cyan-d),0 10px 18px rgba(0,0,0,.15)}
+  .btn.cy:active{box-shadow:0 1px 0 var(--cyan-d)}
+  .btn.mg{background:var(--mag);color:#fff;box-shadow:0 6px 0 var(--mag-d),0 10px 18px rgba(0,0,0,.15)}
+  .btn.mg:active{box-shadow:0 1px 0 var(--mag-d)}
+  .btn.wa{background:#25d366;color:#fff;box-shadow:0 6px 0 #149c48,0 10px 18px rgba(0,0,0,.15)}
+  .btn.wa:active{box-shadow:0 1px 0 #149c48}
+  .btn.gh{background:#fff;color:var(--ink);font-size:17px;box-shadow:0 5px 0 var(--line);border:2px solid var(--line)}
+  .btn[disabled]{filter:grayscale(1) opacity(.45);pointer-events:none}
+  .btn.pulse{animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{50%{transform:scale(1.035)}}
+
+  /* ---------- Juego ---------- */
+  .steps{display:flex;gap:6px;padding:10px 12px 0}
+  .chip{flex:1;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:14px;background:#ffffffb3;border:2px solid #fff;
+    font-weight:900;font-size:12px;color:#7a8396;transition:.3s}
+  .chip i{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#dfe5ef;color:#fff;font-style:normal;font-size:12px}
+  .chip.on{background:#fff;color:var(--ink);border-color:var(--ink);transform:translateY(-2px)}
+  .chip.on i{background:var(--mag)}
+  .chip.done{color:var(--ink)} .chip.done i{background:var(--ok)}
+  .stage{position:relative;margin:8px 12px 0;border-radius:22px;overflow:hidden;background:#c9eeff;border:3px solid #fff;box-shadow:0 8px 20px rgba(0,60,100,.12)}
+  .stage svg{display:block;width:100%;height:auto}
+  .bubble{position:absolute;left:10px;top:10px;max-width:calc(100% - 120px);background:#fff;border-radius:14px 14px 14px 4px;padding:7px 10px;
+    font-weight:800;font-size:12.5px;line-height:1.25;box-shadow:0 4px 0 rgba(0,0,0,.08);opacity:0;transform:scale(.7);transform-origin:left top;transition:.35s var(--ease)}
+  .bubble.on{opacity:1;transform:none}
+  .meter{position:absolute;right:10px;top:10px;background:#ffffffd9;border-radius:12px;padding:6px 8px;font-weight:900;font-size:10.5px;text-align:center;width:86px}
+  .meter .bar{height:8px;border-radius:9px;background:#e2e8f0;overflow:hidden;margin-top:4px}
+  .meter .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--mag),var(--yel));transition:width .8s var(--ease)}
+  .meter b{display:block;font-family:"Baloo 2";font-size:15px;line-height:1;margin-top:3px}
+
+  .screen > .panel{padding:12px 12px 0;flex:1 1 0;display:flex;flex-direction:column;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  .panel h2{font-family:"Baloo 2";font-weight:800;font-size:25px;line-height:1;margin:2px 0 2px}
+  .panel .sub{font-size:13px;color:#5d6577;margin:0 0 10px;font-weight:700}
+  .opts{display:grid;gap:8px}
+  .opts.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .opts.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .opt{position:relative;background:#fff;border:2.5px solid var(--line);border-radius:18px;padding:8px 6px 9px;text-align:center;
+    box-shadow:0 4px 0 var(--line);transition:transform .2s var(--ease),border-color .2s,box-shadow .2s;font-weight:900;font-size:13.5px;line-height:1.1}
+  .opt:hover{transform:translateY(-2px)}
+  .opt:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+  .opt small{display:block;font-weight:800;font-size:11px;color:#6b7385;margin-top:3px}
+  .opt .pr{display:block;font-family:"Baloo 2";font-weight:800;font-size:15px;color:var(--mag);margin-top:4px}
+  .opt svg{display:block;margin:0 auto 4px;height:62px;width:auto;max-width:100%}
+  .opt.sel{border-color:var(--ink);box-shadow:0 4px 0 var(--ink);background:#fffde0}
+  .opt.sel::after{content:"✓";position:absolute;top:-8px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--ok);color:#fff;
+    display:grid;place-items:center;font-size:14px;border:2.5px solid #fff;animation:bump .4s var(--ease)}
+  .opt.off{opacity:.5;pointer-events:none;filter:grayscale(.7)}
+  .opt .stamp{position:absolute;inset:auto 4px 40% 4px;transform:rotate(-14deg);border:2.5px solid var(--bad);color:var(--bad);border-radius:8px;
+    font-family:"Baloo 2";font-weight:800;font-size:13px;padding:1px 0;background:#fff;opacity:.95}
+  .opt .na{position:absolute;inset:auto 4px 40% 4px;transform:rotate(-8deg);background:#5d6577;color:#fff;border-radius:8px;font-size:11px;padding:3px 2px;white-space:nowrap;overflow:hidden;text-overflow:clip}
+  .opt.tall{display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+  .opt .tl{font-family:"Baloo 2";font-weight:800;font-size:26px;line-height:.9}
+  .seg{display:flex;background:#e9eef6;border-radius:16px;padding:4px;gap:4px;margin:10px 0 2px}
+  .seg button{flex:1;padding:9px 6px;border-radius:12px;font-weight:900;font-size:13px;line-height:1.1;color:#5d6577;transition:.25s}
+  .seg button small{display:block;font-weight:800;font-size:10.5px;opacity:.8}
+  .seg button.sel{background:#fff;color:var(--ink);box-shadow:0 3px 0 #d4dbe7}
+  .tog{display:flex;align-items:center;gap:10px;margin-top:10px;background:#fff;border:2px dashed #cfd7e4;border-radius:16px;padding:9px 12px;font-weight:800;font-size:13px;text-align:left;width:100%}
+  .tog .sw{flex:none;width:42px;height:24px;border-radius:99px;background:#cfd7e4;position:relative;transition:.25s}
+  .tog .sw::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s var(--ease)}
+  .tog.sel{border-style:solid;border-color:var(--cyan)}
+  .tog.sel .sw{background:var(--cyan)} .tog.sel .sw::after{left:21px}
+  .tog small{display:block;color:#6b7385;font-size:11.5px}
+  .nav{display:flex;gap:8px;margin-top:auto;padding:12px 0 14px;position:sticky;bottom:0;z-index:2;
+    background:linear-gradient(rgba(255,255,255,0),#fff 14px)}
+  .nav .btn.gh{width:auto;flex:none;padding:0 16px}
+  .nav .btn{white-space:nowrap;font-size:clamp(16px,5.2vw,21px);padding-left:10px;padding-right:10px}
+  .screen > .panel{min-height:150px}
+  @media (max-height:700px){ #sGame .stage svg{max-height:26dvh} .panel h2{font-size:22px;margin-bottom:8px} .panel .sub{display:none} }
+
+  /* Cotizador (ticket) */
+  .ticket{position:relative;z-index:4;margin:0 8px 8px;background:var(--ink);color:#fff;border-radius:20px;overflow:hidden;box-shadow:0 -6px 24px rgba(0,0,0,.18)}
+  .ticket .top{display:flex;align-items:center;gap:10px;padding:10px 14px;width:100%;text-align:left}
+  .ticket .lbl{font-weight:900;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan)}
+  .ticket .lbl em{font-style:normal;color:#9aa1b2;letter-spacing:0;text-transform:none;font-weight:800}
+  .ticket .tot{font-family:"Baloo 2";font-weight:800;font-size:26px;line-height:1}
+  .ticket .tot.flash{animation:flash .6s ease}
+  @keyframes flash{30%{color:var(--yel);transform:scale(1.06)}}
+  .ticket .car{margin-left:auto;font-size:13px;color:#9aa1b2;white-space:nowrap}
+  .ticket .car i{display:inline-block;font-style:normal;transition:transform .3s}
+  .ticket.open .car i{transform:rotate(180deg)}
+  .ticket .lines{max-height:0;overflow:hidden;transition:max-height .4s ease}
+  .ticket.open .lines{max-height:min(320px,24dvh);overflow-y:auto}
+  .ln{display:flex;gap:8px;align-items:flex-start;padding:7px 14px;border-top:1px dashed #ffffff22;font-size:12.5px;font-weight:700}
+  .ln .d{flex:1;line-height:1.25} .ln .d small{display:block;color:#9aa1b2;font-size:10.5px}
+  .ln .v{font-weight:900;white-space:nowrap}
+  .ln.new{animation:lineIn .5s var(--ease)}
+  @keyframes lineIn{from{opacity:0;transform:translateX(-14px)}}
+  .ln.pend .v,.ln.pend .d{color:#7d8496}
+  .ticket .foot{padding:6px 14px 10px;font-size:10.5px;color:#9aa1b2;border-top:1px dashed #ffffff22}
+
+  /* Final */
+  .final{padding:12px 14px 18px;gap:10px;text-align:center}
+  .final h2{font-family:"Baloo 2";font-weight:800;font-size:32px;line-height:1;margin:6px 0 0}
+  .final h2 span{color:var(--mag)}
+  .sumcard{background:#fff;border:2.5px solid var(--ink);border-radius:20px;padding:12px;text-align:left;box-shadow:0 5px 0 var(--ink)}
+  .sumcard .row{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:800;padding:4px 0}
+  .sumcard .row span:first-child{color:#5d6577}
+  .qty{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:10px;border-top:2px dashed var(--line)}
+  .qty .st{display:flex;align-items:center;gap:6px}
+  .qty .st button{width:38px;height:38px;border-radius:12px;background:var(--soft);font-size:22px;font-weight:900;box-shadow:0 3px 0 var(--line)}
+  .qty .st b{min-width:34px;text-align:center;font-family:"Baloo 2";font-size:24px}
+  .big{font-family:"Baloo 2";font-weight:800;font-size:30px;color:var(--mag);line-height:1}
+  .cart{background:#f6f8fc;border-radius:16px;padding:8px 12px;text-align:left;font-size:12.5px;font-weight:800}
+  .cart div{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line)}
+  .cart div:last-child{border:0}
+  .cart div span:last-child{white-space:nowrap}
+  .note{font-size:11.5px;color:#6b7385;font-weight:700;line-height:1.35}
+  .badge{display:inline-flex;gap:6px;align-items:center;background:var(--ink);color:#fff;border-radius:999px;padding:5px 12px;font-weight:900;font-size:12.5px}
+  .badge b{color:var(--yel)}
+
+  .toast{position:fixed;left:50%;top:64px;transform:translate(-50%,-30px);opacity:0;z-index:50;background:var(--ink);color:#fff;
+    padding:9px 16px;border-radius:999px;font-weight:900;font-size:13.5px;box-shadow:0 10px 24px rgba(0,0,0,.25);transition:.4s var(--ease);white-space:nowrap;pointer-events:none}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  .toast b{color:var(--yel)}
+  canvas#confeti{position:fixed;inset:0;pointer-events:none;z-index:60}
+
+  /* Animaciones del escenario */
+  .sway{animation:sway 3.2s ease-in-out infinite;transform-box:view-box}
+  @keyframes sway{0%,100%{transform:rotate(-1.6deg) skewY(.6deg)}50%{transform:rotate(1.6deg) skewY(-.6deg)}}
+  .drop{animation:drop .7s var(--ease) both}
+  @keyframes drop{from{transform:translateY(-140px);opacity:0}}
+  .rise{animation:rise .7s var(--ease) both;transform-box:fill-box;transform-origin:bottom}
+  @keyframes rise{from{transform:scaleY(0)}}
+  .thud{animation:thud .6s var(--ease) both;transform-box:fill-box;transform-origin:bottom}
+  @keyframes thud{0%{transform:translateY(-90px)}60%{transform:translateY(0) scaleY(.8) scaleX(1.15)}100%{transform:none}}
+  .ghost{animation:ghost 1.4s ease-in-out infinite}
+  @keyframes ghost{50%{opacity:.45}}
+  .cloud{animation:cloud 40s linear infinite}
+  @keyframes cloud{from{transform:translateX(-80px)}to{transform:translateX(420px)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hud">
+    <img src="logo-blanco.svg" alt="Centro Digital PRS" onclick="irInicio()">
+    <div class="sp"></div>
+    <div class="pill" id="stars">⭐ <b id="starsN">0</b></div>
+    <button class="ico" id="snd" aria-label="Sonido" onclick="toggleSnd()">🔊</button>
+  </header>
+
+  <!-- ===== Inicio ===== -->
+  <section class="screen intro on" id="sIntro">
+    <h1 class="brand" aria-label="Arma PRS"><span>A</span><span>R</span><span>M</span><span>A</span> <br><span class="prs"><span>P</span><span>R</span><span>S</span></span></h1>
+    <div class="tag">¡Arma tu <b>banderín</b> y cotiza al instante!</div>
+    <div class="stage"><svg id="svgIntro" viewBox="0 0 360 250"></svg></div>
+    <div class="how">
+      <div><i>1</i>Elige tu impresión</div>
+      <div><i>2</i>Escoge la talla</div>
+      <div><i>3</i>Ponle su base</div>
+    </div>
+    <button class="btn pulse" onclick="empezar()">🚩 ¡A ARMAR!</button>
+    <div class="note">Precios con IVA · Catálogo Centro Digital PRS 2026</div>
+  </section>
+
+  <!-- ===== Juego ===== -->
+  <section class="screen" id="sGame">
+    <div class="steps">
+      <div class="chip" data-s="1"><i>1</i>Impresión</div>
+      <div class="chip" data-s="2"><i>2</i>Estructura</div>
+      <div class="chip" data-s="3"><i>3</i>Base</div>
+    </div>
+    <div class="stage">
+      <svg id="svgGame" viewBox="0 0 360 250"></svg>
+      <div class="bubble" id="bubble"></div>
+      <div class="meter">PODER DE<br>ATRACCIÓN<div class="bar"><i id="powBar"></i></div><b id="powN">0%</b></div>
+    </div>
+    <div class="panel" id="panel"></div>
+    <div class="ticket" id="ticket">
+      <button class="top" onclick="this.parentNode.classList.toggle('open')" aria-label="Ver detalle del cotizador">
+        <div><div class="lbl">Cotizador <em id="tkItems"></em></div><div class="tot" id="tkTot">$ 0</div></div>
+        <span class="car">Ver detalle <i>▲</i></span>
+      </button>
+      <div class="lines" id="tkLines"></div>
+    </div>
+  </section>
+
+  <!-- ===== Final ===== -->
+  <section class="screen final" id="sFinal"></section>
+</div>
+<div class="toast" id="toast"></div>
+<canvas id="confeti"></canvas>
+
+<script>
+/* =====================================================================
+   DATOS — Catálogo PRS 2026 con IVA (pág. 18). Actualizar aquí.
+   imp = Con impresión + costura (solo tela) · est = Con estructura
+   bases: null = no compatible con esa talla
+   ===================================================================== */
+const WHATSAPP = '573152592580';
+
+const TALLAS = {
+  XS:{ code:'BAN-0001', area:'50 × 120 cm', aw:50,  ah:120, alto:170, peso:'0,35 kg' },
+  S: { code:'BAN-0002', area:'75 × 170 cm', aw:75,  ah:170, alto:220, peso:'1 kg' },
+  M: { code:'BAN-0003', area:'95 × 205 cm', aw:95,  ah:205, alto:255, peso:'2 kg' },
+  L: { code:'BAN-0004', area:'110 × 265 cm',aw:110, ah:265, alto:335, peso:'2 kg' },
+  XL:{ code:'BAN-0005', area:'120 × 360 cm',aw:120, ah:360, alto:430, peso:'3 kg' },
+};
+const PRECIOS = {
+  doble: { // Banderín con impresión doble cara sublimación (Tifón)
+    XS:{imp:107100,est:171360,small:218960,medium:253470,metal:284410,large:296310,llanta:314160},
+    S: {imp:119000,est:191590,small:239190,medium:273700,metal:304640,large:316540,llanta:334390},
+    M: {imp:142800,est:224910,small:272510,medium:307020,metal:337960,large:349860,llanta:367710},
+    L: {imp:166600,est:261800,small:null,  medium:343910,metal:null,  large:386750,llanta:404600},
+    XL:{imp:226100,est:328737,small:null,  medium:null,  metal:null,  large:453687,llanta:471537},
+  },
+  entre: { // Banderines con entrepaño
+    XS:{imp:119000,est:183260,small:230860,medium:265370,metal:296310,large:308210,llanta:302260},
+    S: {imp:136850,est:209440,small:257040,medium:291550,metal:322490,large:334390,llanta:328440},
+    M: {imp:160650,est:242760,small:290360,medium:324870,metal:355810,large:367710,llanta:361760},
+    L: {imp:190400,est:285600,small:null,  medium:367710,metal:null,  large:410550,llanta:404600},
+    XL:{imp:255850,est:358190,small:null,  medium:null,  metal:null,  large:483190,llanta:477190},
+  }
+};
+const BASES = [
+  { id:'none',   name:'Sin base',       sub:'Solo estructura + bolsa', code:'' },
+  { id:'small',  name:'Tanque Small',   sub:'Ø 35 cm',               code:'BS-0009' },
+  { id:'medium', name:'Tanque Medium',  sub:'Ø 45 cm',               code:'BS-0008' },
+  { id:'metal',  name:'Base Estándar',  sub:'Metálica interiores',   code:'BS-0003' },
+  { id:'large',  name:'Tanque Large',   sub:'Exteriores',            code:'BS-0010' },
+  { id:'llanta', name:'Tanque Llanta',  sub:'Máxima estabilidad',    code:'BS-0011' },
+];
+const FORMAS = [
+  { id:'gota',    name:'Gota',    tipo:'Gota' },
+  { id:'convex',  name:'Convex',  tipo:'Gota' },
+  { id:'concavo', name:'Cóncavo', tipo:'Gota' },
+  { id:'recta',   name:'Recta',   tipo:'Pluma' },
+  { id:'pluma',   name:'Pluma',   tipo:'Pluma' },
+  { id:'aleta',   name:'Aleta',   tipo:'Pluma' },
+];
+// Agotados (según catálogo). Quitar de la lista cuando vuelva el inventario.
+const AGOTADO_TALLA = new Set(['XS','S']);
+const AGOTADO_BASE  = new Set(['large','llanta']);
+
+/* Formas normalizadas: palo en x=0, la tela va de x=0 a x=1 y de y=0 a y=1 */
+const SHAPE = {
+  gota:   { d:'M0 0 C.66 0 1 .22 1 .5 C1 .78 .5 .95 0 1 Z',          rod:'M0 1 V0 C.66 0 1 .22 1 .5' },
+  convex: { d:'M0 0 C.66 0 1 .2 1 .45 L1 .74 Q.72 1.06 0 1 Z',       rod:'M0 1 V0 C.66 0 1 .2 1 .45' },
+  concavo:{ d:'M0 0 C.66 0 1 .2 1 .45 L1 1 Q.42 .78 0 1 Z',          rod:'M0 1 V0 C.66 0 1 .2 1 .45' },
+  recta:  { d:'M0 0 H.9 Q1 0 1 .06 V1 H0 Z',                          rod:'M0 1 V0 H.9' },
+  pluma:  { d:'M0 0 C.5 -.02 .95 .05 1 .2 V1 H0 Z',                   rod:'M0 1 V0 C.5 -.02 .95 .05 1 .2' },
+  aleta:  { d:'M0 0 L1 .17 V.92 Q.5 1.02 0 1 Z',                      rod:'M0 1 V0 L1 .17' },
+};
+
+/* ===================================================================== */
+const $ = id => document.getElementById(id);
+const fmt = n => '$ ' + Math.round(n).toLocaleString('es-CO');
+const S = { paso:1, forma:null, modo:'doble', talla:null, soloTela:false, base:null, qty:1, stars:0, pedido:[], vistos:new Set() };
+let uid = 0;
+
+/* ---------- Sonido ---------- */
+let AC = null, sonido = true;
+try { sonido = localStorage.getItem('armaprs-snd') !== '0'; } catch(e){}
+function beep(f=660, d=.09, type='triangle', v=.08, delay=0){
+  if(!sonido) return;
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d + .02);
+  }catch(e){}
+}
+const sfx = {
+  tap:  () => beep(520,.06,'square',.04),
+  pick: () => { beep(660,.08); beep(990,.1,'triangle',.07,.07); },
+  thud: () => { beep(110,.18,'sine',.2); beep(70,.2,'sine',.15,.03); },
+  win:  () => [523,659,784,1046].forEach((f,i)=>beep(f,.16,'triangle',.08,i*.11)),
+  no:   () => beep(180,.15,'sawtooth',.05),
+};
+function toggleSnd(){ sonido = !sonido; $('snd').textContent = sonido ? '🔊' : '🔇'; try{localStorage.setItem('armaprs-snd', sonido?'1':'0')}catch(e){} sfx.tap(); }
+$('snd').textContent = sonido ? '🔊' : '🔇';
+
+/* ---------- Estrellas / toast / burbuja ---------- */
+function ganar(key, n=1){
+  if(S.vistos.has(key)) return; S.vistos.add(key);
+  S.stars += n; $('starsN').textContent = S.stars;
+  const p = $('stars'); p.classList.remove('bump'); void p.offsetWidth; p.classList.add('bump');
+}
+let tT;
+function toast(html){ const t=$('toast'); t.innerHTML=html; t.classList.add('on'); clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'),1900); }
+let bT;
+function decir(txt){ const b=$('bubble'); b.classList.remove('on'); void b.offsetWidth; b.textContent=txt; b.classList.add('on'); clearTimeout(bT); bT=setTimeout(()=>b.classList.remove('on'),4200); }
+
+/* ---------- Dibujo del escenario ---------- */
+const G = 228, PX = 150, ESC = 196/430; // suelo, x del palo, px por cm
+
+function escena(){
+  return `
+  <defs>
+    <linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fdcff"/><stop offset="1" stop-color="#e6f8ff"/></linearGradient>
+    <linearGradient id="tela" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00AFEF"/><stop offset=".55" stop-color="#EC268F"/><stop offset="1" stop-color="#b5106a"/></linearGradient>
+    <pattern id="rayas" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="#fff"/><rect width="5" height="10" fill="#eef3fa"/></pattern>
+  </defs>
+  <rect width="360" height="250" fill="url(#cielo)"/>
+  <circle cx="318" cy="38" r="17" fill="#FFF212"/><circle cx="318" cy="38" r="25" fill="#FFF212" opacity=".25"/>
+  <g class="cloud" opacity=".95"><ellipse cx="40" cy="46" rx="26" ry="10" fill="#fff"/><ellipse cx="54" cy="38" rx="15" ry="11" fill="#fff"/></g>
+  <g class="cloud" style="animation-delay:-22s" opacity=".8"><ellipse cx="20" cy="80" rx="20" ry="8" fill="#fff"/><ellipse cx="30" cy="74" rx="11" ry="8" fill="#fff"/></g>
+  <g fill="#b9dcf0">
+    <rect x="0" y="150" width="34" height="80"/><rect x="38" y="128" width="28" height="102"/><rect x="70" y="160" width="40" height="70"/>
+    <rect x="232" y="140" width="30" height="90"/><rect x="266" y="118" width="26" height="112"/><rect x="296" y="150" width="64" height="80"/>
+  </g>
+  <g fill="#d6ecf8">${[0,1,2,3,4,5].map(i=>`<rect x="${43+(i%2)*10}" y="${136+Math.floor(i/2)*16}" width="6" height="8"/><rect x="${271+(i%2)*10}" y="${126+Math.floor(i/2)*16}" width="6" height="8"/>`).join('')}</g>
+  <rect x="0" y="${G}" width="360" height="22" fill="#c8ced8"/>
+  <rect x="0" y="${G}" width="360" height="4" fill="#aab3c0"/>
+  ${[0,1,2,3,4,5,6,7].map(i=>`<rect x="${i*48+8}" y="${G+10}" width="30" height="3" rx="1.5" fill="#b4bcc8"/>`).join('')}`;
+}
+
+function persona(){
+  const h = 175*ESC, x = 268, top = G - h;
+  return `<g opacity=".9">
+    <circle cx="${x}" cy="${top+7}" r="7" fill="#f2c39b"/>
+    <path d="M${x-7} ${top+3} q7 -9 14 0 q-2 -3 -7 -3 t-7 3z" fill="#3b2a20"/>
+    <rect x="${x-10}" y="${top+15}" width="20" height="${h*.42}" rx="7" fill="#2f4e86"/>
+    <rect x="${x-3}" y="${top+15}" width="6" height="${h*.3}" fill="#fff"/>
+    <rect x="${x-9}" y="${top+15+h*.4}" width="8" height="${h*.48}" rx="3" fill="#2c2c34"/>
+    <rect x="${x+1}" y="${top+15+h*.4}" width="8" height="${h*.48}" rx="3" fill="#2c2c34"/>
+    <text x="${x}" y="${G+19}" text-anchor="middle" font-size="9" font-weight="900" fill="#5d6577" font-family="Nunito">1,75 m</text>
+  </g>`;
+}
+
+function baseSVG(id, cls=''){
+  const x = PX, y = G;
+  const B = {
+    none:  `<path d="M${x-2} ${y} l2 9 l2 -9z" fill="#555"/><ellipse cx="${x}" cy="${y+1}" rx="8" ry="2" fill="#000" opacity=".15"/>`,
+    small: `<ellipse cx="${x}" cy="${y+1}" rx="22" ry="4" fill="#000" opacity=".18"/><path d="M${x-18} ${y} q2 -13 18 -14 q16 1 18 14z" fill="#2b2b30"/><rect x="${x-5}" y="${y-19}" width="10" height="6" rx="2" fill="#44444b"/>`,
+    medium:`<ellipse cx="${x}" cy="${y+1}" rx="28" ry="4" fill="#000" opacity=".18"/><path d="M${x-25} ${y} q2 -15 25 -16 q23 1 25 16z" fill="#232328"/><path d="M${x-17} ${y-6} h34" stroke="#3d3d44" stroke-width="2"/><rect x="${x-5}" y="${y-21}" width="10" height="7" rx="2" fill="#44444b"/>`,
+    metal: `<ellipse cx="${x}" cy="${y+1}" rx="26" ry="3.5" fill="#000" opacity=".18"/><path d="M${x-24} ${y} l8 -5 h32 l8 5z" fill="#1d1d22"/><rect x="${x-24}" y="${y-1}" width="48" height="2" fill="#0e0e12"/><rect x="${x-3.5}" y="${y-13}" width="7" height="9" rx="1.5" fill="#55555e"/>`,
+    large: `<ellipse cx="${x}" cy="${y+1}" rx="32" ry="4.5" fill="#000" opacity=".18"/><path d="M${x-30} ${y} q3 -17 30 -18 q27 1 30 18z" fill="#9aa3b0"/><path d="M${x-21} ${y-7} h42" stroke="#b9c1cc" stroke-width="3"/><rect x="${x-6}" y="${y-24}" width="12" height="8" rx="2" fill="#7c8592"/>`,
+    llanta:`<ellipse cx="${x}" cy="${y+1}" rx="31" ry="4.5" fill="#000" opacity=".2"/><rect x="${x-28}" y="${y-15}" width="56" height="15" rx="7" fill="#1f1f24"/>${[...Array(7)].map((_,i)=>`<rect x="${x-24+i*7.5}" y="${y-14}" width="3" height="13" rx="1" fill="#34343b"/>`).join('')}<ellipse cx="${x}" cy="${y-15}" rx="18" ry="3.5" fill="#55555e"/><rect x="${x-5}" y="${y-23}" width="10" height="8" rx="2" fill="#44444b"/>`,
+  };
+  return `<g class="${cls}">${B[id]||''}</g>`;
+}
+const ALTO_BASE = { none:0, small:13, medium:15, metal:6, large:18, llanta:15 };
+
+function banderin(o){
+  // o: {forma, talla, poste(bool), base, anim:{tela,poste,base}, ghost}
+  const T = TALLAS[o.talla||'M'];
+  const ab = o.base ? ALTO_BASE[o.base] : 0;
+  const altoTotal = T.alto*ESC, w = T.aw*ESC*.92, h = T.ah*ESC;
+  const suelo = G - ab;
+  const top = o.poste ? G - altoTotal : 40 + (196 - h)/2;   // flotando antes de tener estructura
+  const sh = SHAPE[o.forma||'gota'];
+  const id = 'c' + (++uid);
+  const tr = `translate(${PX} ${top}) scale(${w} ${h})`;
+  const midY = top + h/2;
+  let s = '';
+  if(o.base){ s += baseSVG(o.base, o.anim==='base' ? 'thud' : ''); }
+  if(o.poste){
+    s += `<g class="${o.anim==='poste'?'rise':''}">
+      <line x1="${PX}" y1="${top+h}" x2="${PX}" y2="${suelo}" stroke="#3b3b42" stroke-width="3" stroke-linecap="round"/>
+    </g>`;
+  }
+  const fill = o.ghost
+    ? `<path d="${sh.d}" transform="${tr}" fill="#ffffff99" stroke="#222124" stroke-width="2" stroke-dasharray="6 5" vector-effect="non-scaling-stroke" class="ghost"/>`
+    : `<clipPath id="${id}"><path d="${sh.d}" transform="${tr}"/></clipPath>
+       <g clip-path="url(#${id})">
+         <rect x="${PX}" y="${top-4}" width="${w+2}" height="${h+8}" fill="url(#tela)"/>
+         <rect x="${PX}" y="${top+h*.66}" width="${w+2}" height="${h*.13}" fill="#FFF212"/>
+         <circle cx="${PX+w*.42}" cy="${top+h*.13}" r="${w*.12}" fill="#fff" opacity=".9"/>
+         <circle cx="${PX+w*.42}" cy="${top+h*.13}" r="${w*.07}" fill="#00AFEF"/>
+         <text data-fit="${h*.4}" x="${PX+w*.44}" y="${top+h*.44}" transform="rotate(-90 ${PX+w*.44} ${top+h*.44})" text-anchor="middle" dominant-baseline="central"
+           font-family="Baloo 2" font-weight="800" font-size="${Math.min(w*.34, h*.4/4.6)}" fill="#fff">TU MARCA</text>
+         <text data-fit="${w*.56}" x="${PX+w*.42}" y="${top+h*.725}" text-anchor="middle" dominant-baseline="central" font-family="Nunito" font-weight="900" font-size="${Math.min(w*.17, h*.09)}" fill="#222124">PROMO</text>
+       </g>
+       <path d="${sh.d}" transform="${tr}" fill="none" stroke="#00000030" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`;
+  const rod = o.poste ? `<path d="${sh.rod}" transform="${tr}" fill="none" stroke="#3b3b42" stroke-width="2.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/>` : '';
+  const sway = o.ghost ? '' : 'sway';
+  s += `<g class="${o.anim==='tela'?'drop':''}"><g class="${sway}" style="transform-origin:${PX}px ${top+h}px">${fill}${rod}</g></g>`;
+  if(o.poste){
+    s += `<g font-family="Nunito" font-weight="900" font-size="9" fill="#222124">
+      <line x1="${PX-14}" y1="${top}" x2="${PX-14}" y2="${G}" stroke="#222124" stroke-width="1" stroke-dasharray="2 3"/>
+      <rect x="${PX-46}" y="${(top+G)/2-8}" width="30" height="15" rx="7" fill="#fff"/>
+      <text x="${PX-31}" y="${(top+G)/2+3}" text-anchor="middle">${(T.alto/100).toFixed(2).replace('.',',')}m</text></g>`;
+  }
+  return s;
+}
+
+// ids únicos por SVG: un gradiente dentro de una pantalla oculta no pinta en las demás
+function pintar(svg, o){ svg.innerHTML = (escena() + persona() + banderin(o)).replace(/(id="|url\(#)(tela|cielo|rayas)/g, `$1$2-${svg.id}`); ajustar(svg); }
+// Reduce la letra si el texto mide más que el espacio seguro de la tela (data-fit)
+function ajustar(svg){
+  svg.querySelectorAll('text[data-fit]').forEach(t=>{
+    let len = 0; try{ len = t.getComputedTextLength(); }catch(e){}
+    const max = +t.dataset.fit;
+    if(len > max) t.setAttribute('font-size', (+t.getAttribute('font-size')) * max/len);
+  });
+}
+// Al terminar de cargar las fuentes, se vuelve a medir
+if(document.fonts) document.fonts.ready.then(()=>{ ['svgIntro','svgGame','svgFinal'].forEach(id=>{ const s=$(id); if(s) ajustar(s); }); });
+
+/* Mini íconos para las tarjetas */
+function miniForma(f){
+  const sh = SHAPE[f];
+  return `<svg viewBox="-6 -4 44 70"><path d="${sh.d}" transform="translate(4 2) scale(26 54)" fill="url(#mt)" />
+    <path d="${sh.rod}" transform="translate(4 2) scale(26 54)" fill="none" stroke="#222124" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    <line x1="4" y1="56" x2="4" y2="64" stroke="#222124" stroke-width="2"/>
+    <defs><linearGradient id="mt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00AFEF"/><stop offset="1" stop-color="#EC268F"/></linearGradient></defs></svg>`;
+}
+function miniBase(id){
+  return `<svg viewBox="${PX-36} ${G-30} 72 40">${baseSVG(id)}<line x1="${PX}" y1="${G-30}" x2="${PX}" y2="${G-(ALTO_BASE[id]||0)}" stroke="#3b3b42" stroke-width="2.5"/></svg>`;
+}
+function miniTalla(t){
+  const h = 18 + TALLAS[t].alto/430*42;
+  return `<svg viewBox="0 0 30 64"><path d="${SHAPE[S.forma||'gota'].d}" transform="translate(9 ${62-h}) scale(${10+TALLAS[t].aw/120*10} ${h*.72})" fill="url(#mt2)"/>
+    <line x1="9" y1="${62-h}" x2="9" y2="62" stroke="#222124" stroke-width="2"/>
+    <defs><linearGradient id="mt2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00AFEF"/><stop offset="1" stop-color="#EC268F"/></linearGradient></defs></svg>`;
+}
+
+/* ---------- Precios ---------- */
+function P(){ return S.talla ? PRECIOS[S.modo][S.talla] : null; }
+function total(){
+  const p = P(); if(!p) return 0;
+  if(S.soloTela) return p.imp;
+  if(!S.base) return p.est;
+  if(S.base==='none') return p.est;
+  return p[S.base] || 0;
+}
+function poder(){
+  let v = 0;
+  if(S.forma) v += 25;
+  if(S.modo==='entre') v += 10;
+  if(S.talla) v += {XS:10,S:16,M:24,L:32,XL:40}[S.talla];
+  if(S.base && S.base!=='none') v += {small:15,medium:18,metal:16,large:22,llanta:25}[S.base];
+  if(S.base==='none' || S.soloTela) v += 5;
+  return Math.min(100, v);
+}
+
+/* ---------- Cotizador ---------- */
+let totPrev = 0, contarId = 0;
+function contar(el, a, b){
+  const t0 = performance.now(), dur = 600, id = ++contarId;   // un conteo nuevo cancela el anterior
+  const step = now => { if(id !== contarId) return; const k = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-k,3); el.textContent = fmt(a+(b-a)*e); if(k<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function nombreForma(){ return (FORMAS.find(f=>f.id===S.forma)||{}).name || ''; }
+function lineas(){
+  const p = P(), L = [];
+  const imp = `Impresión ${nombreForma()} doble cara${S.modo==='entre'?' + entrepaño':''}`;
+  L.push({ k:'imp', d: S.forma ? imp : 'Impresión', s: S.forma ? 'Sublimación sobre tela Tifón (antifluido 100%)' : 'Paso 1 — elige la forma', v: p ? p.imp : null });
+  if(!S.soloTela){
+    L.push({ k:'est', d: S.talla ? `Estructura fibra de vidrio talla ${S.talla}` : 'Estructura', s: S.talla ? `${TALLAS[S.talla].code} · área ${TALLAS[S.talla].area} · incluye bolsa` : 'Paso 2 — elige la talla', v: p ? p.est - p.imp : null });
+    const b = BASES.find(x=>x.id===S.base);
+    L.push({ k:'base', d: b ? (b.id==='none' ? 'Sin base' : `Base ${b.name}`) : 'Base', s: b ? (b.code || 'Solo estructura') : 'Paso 3 — elige la base', v: (p && S.base) ? total() - p.est : null });
+  } else {
+    L.push({ k:'st', d:'Solo tela (ya tengo estructura)', s:'Sin estructura ni base', v:0 });
+  }
+  return L;
+}
+let lineasPrev = '';
+function cotizador(){
+  const L = lineas(), tot = total();
+  const html = L.map(l => {
+    const sig = l.k+'|'+l.d+'|'+l.v;
+    const isNew = !lineasPrev.includes(sig);
+    return `<div class="ln ${l.v==null?'pend':''} ${isNew && l.v!=null?'new':''}" data-sig="${sig}"><div class="d">${l.d}<small>${l.s}</small></div><div class="v">${l.v==null?'—':(l.k==='imp'||l.v===0?'':'+ ')+fmt(l.v)}</div></div>`;
+  }).join('') + `<div class="foot">Valores con IVA · Catálogo PRS 2026 · Sujeto a disponibilidad</div>`;
+  lineasPrev = L.map(l=>l.k+'|'+l.d+'|'+l.v).join('§');
+  $('tkLines').innerHTML = html;
+  const n = L.filter(l=>l.v!=null).length;
+  $('tkItems').textContent = S.pedido.length ? `· ${S.pedido.length} en el pedido` : (n ? `· ${n} ítem${n>1?'s':''}` : '');
+  const el = $('tkTot');
+  if(!tot){ contarId++; el.textContent = S.forma ? 'Elige talla' : '$ 0'; }
+  else if(tot !== totPrev){ contar(el, totPrev, tot); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  else el.textContent = fmt(tot);
+  totPrev = tot;
+  const pw = poder(); $('powBar').style.width = pw+'%'; $('powN').textContent = pw+'%';
+}
+
+/* ---------- Pasos ---------- */
+function chips(){
+  document.querySelectorAll('.chip').forEach(c=>{
+    const s = +c.dataset.s;
+    c.classList.toggle('on', s===S.paso);
+    const done = (s===1 && S.forma) || (s===2 && S.talla) || (s===3 && S.base);
+    c.classList.toggle('done', !!done && s!==S.paso);
+    c.style.opacity = (s===3 && S.soloTela) ? .4 : 1;
+  });
+}
+
+function escenaJuego(anim){
+  const o = { forma:S.forma||'gota', talla:S.talla||'M', poste:!!S.talla && !S.soloTela, base:(!S.soloTela && S.base) || null, anim, ghost:!S.forma };
+  pintar($('svgGame'), o);
+}
+
+function render(anim){
+  chips(); cotizador(); escenaJuego(anim);
+  const pn = $('panel');
+  if(S.paso===1){
+    pn.innerHTML = `
+      <h2>1. Tu impresión</h2>
+      <p class="sub">Elige la forma del banderín — 6 estilos, doble cara sublimada.</p>
+      <div class="opts c3">${FORMAS.map(f=>`
+        <button class="opt ${S.forma===f.id?'sel':''}" onclick="elegirForma('${f.id}')" aria-pressed="${S.forma===f.id}">
+          ${miniForma(f.id)}${f.name}<small>Tipo ${f.tipo}</small></button>`).join('')}
+      </div>
+      <div class="seg" role="group" aria-label="Entrepaño">
+        <button class="${S.modo==='doble'?'sel':''}" onclick="elegirModo('doble')">Sin entrepaño<small>Doble cara</small></button>
+        <button class="${S.modo==='entre'?'sel':''}" onclick="elegirModo('entre')">Con entrepaño<small>No transparenta</small></button>
+      </div>
+      <div class="nav"><button class="btn cy" ${S.forma?'':'disabled'} onclick="ir(2)">Siguiente: estructura ➜</button></div>`;
+  }
+  if(S.paso===2){
+    const pr = PRECIOS[S.modo];
+    pn.innerHTML = `
+      <h2>2. Estructura</h2>
+      <p class="sub">Talla de fibra de vidrio · incluye bolsa de transporte.</p>
+      <div class="opts c3">${Object.keys(TALLAS).map(t=>{
+        const ag = AGOTADO_TALLA.has(t), T = TALLAS[t];
+        const v = S.soloTela ? pr[t].imp : pr[t].est;
+        return `<button class="opt tall ${S.talla===t?'sel':''} ${ag?'off':''}" onclick="elegirTalla('${t}')" aria-pressed="${S.talla===t}" ${ag?'aria-disabled="true"':''}>
+          ${miniTalla(t)}<span class="tl">${t}</span><small>${T.area}<br>Alto ${T.alto} cm</small><span class="pr">${fmt(v)}</span>
+          ${ag?'<span class="stamp">AGOTADO</span>':''}</button>`;}).join('')}
+      </div>
+      <button class="tog ${S.soloTela?'sel':''}" onclick="toggleSoloTela()"><span class="sw"></span><span>Solo la tela<small>Ya tengo estructura — cotizo solo la impresión</small></span></button>
+      <div class="nav"><button class="btn gh" onclick="ir(1)">◀</button>
+        <button class="btn cy" ${S.talla?'':'disabled'} onclick="${S.soloTela?'terminar()':'ir(3)'}">${S.soloTela?'¡Terminar! 🎉':'Siguiente: base ➜'}</button></div>`;
+  }
+  if(S.paso===3){
+    const p = P();
+    pn.innerHTML = `
+      <h2>3. Base</h2>
+      <p class="sub">Soporte para tu banderín talla ${S.talla}. Precio = banderín completo.</p>
+      <div class="opts c3">${BASES.map(b=>{
+        const v = b.id==='none' ? p.est : p[b.id];
+        const na = v==null, ag = AGOTADO_BASE.has(b.id);
+        return `<button class="opt ${S.base===b.id?'sel':''} ${(na||ag)?'off':''}" onclick="elegirBase('${b.id}')" aria-pressed="${S.base===b.id}">
+          ${miniBase(b.id)}${b.name}<small>${b.sub}</small><span class="pr">${na?'—':fmt(v)}</span>
+          ${ag&&!na?'<span class="stamp">AGOTADO</span>':''}${na?`<span class="na">No aplica ${S.talla}</span>`:''}</button>`;}).join('')}
+      </div>
+      <div class="nav"><button class="btn gh" onclick="ir(2)">◀</button>
+        <button class="btn mg ${S.base?'pulse':''}" ${S.base?'':'disabled'} onclick="terminar()">¡Terminar! 🎉</button></div>`;
+  }
+}
+
+function ir(n){ sfx.tap(); S.paso = n; render(); $('panel').scrollTop = 0;
+  if(n===2) decir('¿Qué tan alto lo quieres? Compáralo con la persona de 1,75 m 👉');
+  if(n===3) decir('¡Último paso! Una buena base lo mantiene firme con el viento 💨');
+}
+
+const FRASES = {
+  gota:'¡La clásica Gota! Curva suave y súper vistosa.', convex:'Convex: borde inferior redondeado, ¡con estilo!',
+  concavo:'Cóncavo: corte curvo hacia adentro, muy moderno.', recta:'Recta: el área más pareja para tu diseño.',
+  pluma:'Pluma: alta y elegante, ¡se ve desde lejos!', aleta:'Aleta: corte inclinado, ¡pura velocidad!'
+};
+function elegirForma(f){
+  const primera = !S.forma; S.forma = f; sfx.pick(); ganar('forma');
+  decir(FRASES[f]); render('tela'); if(primera) toast('⭐ <b>+1</b> ¡Impresión lista!');
+}
+function elegirModo(m){ S.modo = m; sfx.tap(); ganar('modo'+m);
+  decir(m==='entre' ? 'Con entrepaño la tela no transparenta: cada cara se ve limpia ✨' : 'Doble cara: tu marca se ve por ambos lados 👀');
+  render(); }
+function elegirTalla(t){
+  if(AGOTADO_TALLA.has(t)){ sfx.no(); toast('Talla <b>'+t+'</b> agotada por ahora'); return; }
+  const primera = !S.talla; S.talla = t; sfx.pick(); ganar('talla');
+  // si la base ya no es compatible, se limpia
+  if(S.base && S.base!=='none' && (PRECIOS[S.modo][t][S.base]==null || AGOTADO_BASE.has(S.base))) S.base = null;
+  decir({XS:'XS: perfecta para mostradores y entradas.',S:'S: ideal para locales pequeños.',M:'M: ¡la más pedida! 2,55 m de alto.',L:'L: 3,35 m, se nota desde la esquina.',XL:'XL: ¡4,30 m! Se ve desde la otra cuadra 🔥'}[t]);
+  render('poste'); if(primera) toast('⭐ <b>+1</b> ¡Estructura armada!');
+}
+function toggleSoloTela(){ S.soloTela = !S.soloTela; sfx.tap(); if(S.soloTela) S.base = null; render();
+  decir(S.soloTela ? 'Perfecto: solo te cotizamos la tela impresa.' : '¡Vamos con estructura completa!'); }
+function elegirBase(b){
+  const p = P(); if(!p) return;
+  if(b!=='none' && (p[b]==null || AGOTADO_BASE.has(b))){ sfx.no(); return; }
+  const primera = !S.base; S.base = b; ganar('base');
+  if(b==='none'){ sfx.pick(); decir('Sin base: llevas la estructura con su bolsa.'); }
+  else { sfx.thud(); decir({small:'Tanque Small: compacto y fácil de mover.',medium:'Tanque Medium: más peso, más firmeza.',metal:'Base estándar metálica: ideal para interiores.',large:'Tanque Large: para exteriores.',llanta:'Llanta: ¡la más estable para la calle!'}[b]); }
+  render('base'); if(primera) toast('⭐ <b>+1</b> ¡Banderín completo!');
+}
+
+/* ---------- Final ---------- */
+function itemActual(){
+  const b = BASES.find(x=>x.id===S.base);
+  return {
+    forma: nombreForma(), modo:S.modo, talla:S.talla, code:TALLAS[S.talla].code, soloTela:S.soloTela,
+    base: S.soloTela ? null : b, unit: total(), qty:S.qty,
+    desc: `Banderín ${nombreForma()} talla ${S.talla} (${TALLAS[S.talla].code}) · doble cara${S.modo==='entre'?' con entrepaño':''}` +
+          (S.soloTela ? ' · solo tela' : (b && b.id!=='none' ? ` · Base ${b.name} (${b.code})` : ' · estructura sin base'))
+  };
+}
+function terminar(){
+  ganar('fin', 2); sfx.win(); confeti(); S.qty = S.qty || 1;
+  S.paso = 4; chips(); pintarFinal();
+  $('sGame').classList.remove('on'); $('sFinal').classList.add('on'); window.scrollTo({top:0});
+}
+function pintarFinal(){
+  const it = itemActual(), sub = it.unit*S.qty, totPed = S.pedido.reduce((a,x)=>a+x.unit*x.qty,0) + sub;
+  const b = it.base;
+  $('sFinal').innerHTML = `
+    <div><span class="badge">⭐ <b>${S.stars}</b> estrellas · Poder de atracción <b>${poder()}%</b></span></div>
+    <h2>¡Tu banderín<br><span>está listo!</span></h2>
+    <div class="stage" style="margin:0"><svg id="svgFinal" viewBox="0 0 360 250"></svg></div>
+    <div class="sumcard">
+      <div class="row"><span>Forma</span><span>${it.forma}</span></div>
+      <div class="row"><span>Impresión</span><span>Doble cara${S.modo==='entre'?' + entrepaño':''}</span></div>
+      <div class="row"><span>Talla</span><span>${S.talla} · ${TALLAS[S.talla].area}</span></div>
+      <div class="row"><span>Estructura</span><span>${S.soloTela?'No (solo tela)':TALLAS[S.talla].code+' · '+TALLAS[S.talla].alto+' cm'}</span></div>
+      <div class="row"><span>Base</span><span>${S.soloTela?'—':(b.id==='none'?'Sin base':b.name+' · '+b.code)}</span></div>
+      <div class="row"><span>Valor unidad</span><span>${fmt(it.unit)}</span></div>
+      <div class="qty"><div><div class="note">Cantidad</div><div class="st">
+        <button onclick="cant(-1)" aria-label="Menos">−</button><b id="qn">${S.qty}</b><button onclick="cant(1)" aria-label="Más">+</button></div></div>
+        <div style="text-align:right"><div class="note">Subtotal</div><div class="big">${fmt(sub)}</div></div></div>
+    </div>
+    ${S.pedido.length ? `<div class="cart"><div style="font-weight:900">🧾 Tu pedido</div>${S.pedido.map((x,i)=>`<div><span>${i+1}. ${x.desc} × ${x.qty}</span><span>${fmt(x.unit*x.qty)}</span></div>`).join('')}
+      <div><span>${S.pedido.length+1}. Este banderín × ${S.qty}</span><span>${fmt(sub)}</span></div>
+      <div style="font-weight:900"><span>Total pedido</span><span>${fmt(totPed)}</span></div></div>` : ''}
+    <button class="btn wa" onclick="whatsapp()">💬 Pedir por WhatsApp</button>
+    <button class="btn cy" onclick="otro()">➕ Agregar otro banderín</button>
+    <button class="btn gh" onclick="editar()">✏️ Cambiar este banderín</button>
+    <p class="note">Valores con IVA según catálogo Centro Digital PRS 2026, sujetos a disponibilidad.<br>
+      Solicita la <b>plantilla para impresión</b> y conoce las medidas exactas. Bogotá · Medellín.</p>`;
+  pintar($('svgFinal'), { forma:S.forma, talla:S.talla, poste:!S.soloTela, base:S.soloTela?null:S.base, anim:'tela' });
+}
+function cant(d){ S.qty = Math.max(1, Math.min(999, S.qty+d)); sfx.tap(); pintarFinal(); }
+function editar(){ sfx.tap(); S.paso = 3 - (S.soloTela?1:0); $('sFinal').classList.remove('on'); $('sGame').classList.add('on'); render(); }
+function otro(){
+  S.pedido.push(itemActual()); sfx.pick();
+  toast('🧾 <b>Agregado</b> al pedido');
+  Object.assign(S, { paso:1, forma:null, talla:null, soloTela:false, base:null, qty:1 }); totPrev = 0; lineasPrev='';
+  $('sFinal').classList.remove('on'); $('sGame').classList.add('on'); render(); decir('¡Vamos por otro! Elige la forma 🚩');
+}
+function whatsapp(){
+  const items = [...S.pedido, itemActual()];
+  const tot = items.reduce((a,x)=>a+x.unit*x.qty,0);
+  const txt = `¡Hola Centro Digital PRS! Armé mi pedido en *Arma PRS* 🚩\n\n` +
+    items.map((x,i)=>`${i+1}) ${x.desc}\n   ${x.qty} × ${fmt(x.unit)} = ${fmt(x.unit*x.qty)}`).join('\n') +
+    `\n\n*Total con IVA: ${fmt(tot)}*\n¿Me confirman disponibilidad y me envían la plantilla para impresión?`;
+  window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(txt)}`, '_blank', 'noopener');
+}
+
+/* ---------- Navegación general ---------- */
+function empezar(){ sfx.win(); $('sIntro').classList.remove('on'); $('sGame').classList.add('on'); S.paso=1; render(); setTimeout(()=>decir('¡Hola! Empecemos: elige la forma de tu banderín 👇'),350); }
+function irInicio(){ $('sGame').classList.remove('on'); $('sFinal').classList.remove('on'); $('sIntro').classList.add('on'); }
+
+/* Intro: el banderín se arma solo, en bucle */
+(function demo(){
+  const pasos = [
+    { forma:'gota', talla:'M', poste:false, base:null, anim:'tela' },
+    { forma:'gota', talla:'M', poste:true,  base:null, anim:'poste' },
+    { forma:'gota', talla:'M', poste:true,  base:'small', anim:'base' },
+    { forma:'pluma', talla:'L', poste:false, base:null, anim:'tela' },
+    { forma:'pluma', talla:'L', poste:true,  base:null, anim:'poste' },
+    { forma:'pluma', talla:'L', poste:true,  base:'medium', anim:'base' },
+    { forma:'aleta', talla:'M', poste:false, base:null, anim:'tela' },
+    { forma:'aleta', talla:'M', poste:true,  base:null, anim:'poste' },
+    { forma:'aleta', talla:'M', poste:true,  base:'metal', anim:'base' },
+  ];
+  let i = 0;
+  const tick = () => { if($('sIntro').classList.contains('on')) pintar($('svgIntro'), pasos[i++ % pasos.length]); };
+  tick(); setInterval(tick, 1500);
+})();
+
+/* ---------- Confeti ---------- */
+function confeti(){
+  const cv = $('confeti'), cx = cv.getContext('2d');
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  cv.width = innerWidth; cv.height = innerHeight;
+  const col = ['#00AFEF','#EC268F','#FFF212','#222124','#ffffff'];
+  const ps = [...Array(140)].map(()=>({ x:innerWidth/2, y:innerHeight*.35, vx:(Math.random()-.5)*14, vy:-Math.random()*13-4,
+    r:Math.random()*6+4, c:col[Math.random()*col.length|0], a:Math.random()*6, va:(Math.random()-.5)*.3 }));
+  let f = 0;
+  (function loop(){
+    cx.clearRect(0,0,cv.width,cv.height);
+    ps.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=.35; p.vx*=.99; p.a+=p.va;
+      cx.save(); cx.translate(p.x,p.y); cx.rotate(p.a); cx.fillStyle=p.c; cx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); cx.restore(); });
+    if(++f < 160) requestAnimationFrame(loop); else cx.clearRect(0,0,cv.width,cv.height);
+  })();
+}
+</script>
+</body>
+</html>
